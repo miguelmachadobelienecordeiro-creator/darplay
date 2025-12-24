@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>DARKPLAY</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin: 0;
+  background: #050505;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+
+.neon {
+  color: #00ffff;
+  text-shadow: 0 0 10px #00ffff;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+  background: #000;
+}
+
+.menu {
+  cursor: pointer;
+  font-size: 22px;
+}
+
+#menuAbas {
+  display: none;
+  position: absolute;
+  right: 10px;
+  top: 55px;
+  background: #000;
+  border: 1px solid #00ffff;
+}
+
+#menuAbas button {
+  background: none;
+  color: #00ffff;
+  border: none;
+  padding: 10px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.produto {
+  border: 1px solid #00ffff;
+  padding: 10px;
+  margin-bottom: 15px;
+}
+
+.produto img {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border: 1px solid #00ffff;
+}
+
+button {
+  background: #00ffff;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 5px;
+}
+
+.remover {
+  background: red;
+  color: white;
+}
+
+#login, #pixModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.box {
+  border: 1px solid #00ffff;
+  padding: 20px;
+  width: 300px;
+}
+
+input, select {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="box">
+    <h2 class="neon">LOGIN</h2>
+    <input id="email" placeholder="Email">
+    <input id="senha" type="password" placeholder="Senha">
+    <button onclick="logar()">Entrar</button>
+  </div>
+</div>
+
+<!-- PIX -->
+<div id="pixModal" style="display:none">
+  <div class="box" id="pixBox">
+    <h3 class="neon">Pagamento PIX</h3>
+    <p id="pixValor"></p>
+    <img id="pixQR" width="200"><br><br>
+    <p>Chave PIX:</p>
+    <input id="pixChave" readonly onclick="this.select()">
+    <button onclick="confirmarPagamento()">Já paguei</button>
+  </div>
+</div>
+
+<header>
+  <h2 class="neon">DARKPLAY</h2>
+  <div class="menu" onclick="toggleMenu()">⋮</div>
+</header>
+
+<div id="menuAbas">
+  <button onclick="carregar('PS4')">PS4</button>
+  <button onclick="carregar('PS5')">PS5</button>
+  <button onclick="carregar('STEAM')">STEAM</button>
+</div>
+
+<div style="padding:20px">
+  <h3 class="neon" id="titulo"></h3>
+  <div id="produtos"></div>
+
+  <!-- ADMIN -->
+  <div id="admin" style="display:none">
+    <h3 class="neon">Adicionar Produto</h3>
+    <input id="nome" placeholder="Nome do produto">
+    <input id="valor" placeholder="Valor">
+    <input id="imagem" placeholder="URL da imagem">
+    <select id="categoria">
+      <option>PS4</option>
+      <option>PS5</option>
+      <option>STEAM</option>
+    </select>
+    <button onclick="criarProduto()">Salvar Produto</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  getDocs, 
+  query, 
+  where,
+  deleteDoc,
+  doc
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCkmqu60VH5bsHE4c8J0fZesiPGBFJprw0",
+  authDomain: "dark-academy-dc5f4.firebaseapp.com",
+  projectId: "dark-academy-dc5f4"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const ADMIN_EMAIL = "admdark@gmail.com";
+const ADMIN_SENHA = "123456";
+const CHAVE_PIX = "SUA_CHAVE_PIX_AQUI";
+const LINK_DISCORD = "fa093dd0-4758-41be-b664-963eac8e1503";
+
+let isAdmin = false;
+
+window.logar = () => {
+  if (email.value === ADMIN_EMAIL && senha.value === ADMIN_SENHA) {
+    admin.style.display = "block";
+    isAdmin = true;
+  }
+  login.style.display = "none";
+  carregar("PS4");
+};
+
+window.toggleMenu = () => {
+  menuAbas.style.display =
+    menuAbas.style.display === "block" ? "none" : "block";
+};
+
+window.carregar = async (cat) => {
+  titulo.innerText = cat;
+  produtos.innerHTML = "";
+
+  const q = query(collection(db, "produtos"), where("categoria", "==", cat));
+  const snap = await getDocs(q);
+
+  snap.forEach(docSnap => {
+    const p = docSnap.data();
+    const id = docSnap.id;
+
+    produtos.innerHTML += `
+      <div class="produto">
+        <img src="${p.imagem}">
+        <h4>${p.nome}</h4>
+        <p>R$ ${p.valor}</p>
+        <button onclick="comprar('${p.valor}')">Comprar</button>
+        ${
+          isAdmin
+            ? `<button class="remover" onclick="removerProduto('${id}','${cat}')">Remover</button>`
+            : ""
+        }
+      </div>
+    `;
+  });
+};
+
+window.comprar = (valor) => {
+  pixValor.innerText = "Valor: R$ " + valor;
+  pixChave.value = CHAVE_PIX;
+  pixQR.src =
+    "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" +
+    encodeURIComponent(CHAVE_PIX + " | Valor: " + valor);
+  pixModal.style.display = "flex";
+};
+
+window.confirmarPagamento = () => {
+  pixBox.innerHTML = `
+    <h3 class="neon">Pagamento confirmado</h3>
+    <button onclick="window.open('${LINK_DISCORD}')">
+      Resgatar no Discord
+    </button>
+  `;
+};
+
+window.criarProduto = async () => {
+  await addDoc(collection(db, "produtos"), {
+    nome: nome.value,
+    valor: valor.value,
+    imagem: imagem.value,
+    categoria: categoria.value
+  });
+  alert("Produto salvo!");
+  carregar(categoria.value);
+};
+
+window.removerProduto = async (id, categoria) => {
+  if (!confirm("Tem certeza que deseja remover este produto?")) return;
+  await deleteDoc(doc(db, "produtos", id));
+  carregar(categoria);
+};
+</script>
+
+</body>
+</html>
