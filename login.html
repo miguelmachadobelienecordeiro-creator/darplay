@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Loja</title>
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#020617;
+  color:white;
+}
+header{
+  padding:15px;
+  border-bottom:1px solid #00e5ff;
+  display:flex;
+  justify-content:space-between;
+}
+button{
+  padding:8px 14px;
+  border:none;
+  border-radius:8px;
+  background:#00e5ff;
+  font-weight:bold;
+  cursor:pointer;
+}
+.container{
+  padding:20px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:20px;
+}
+.card{
+  border:1px solid #00e5ff;
+  border-radius:12px;
+  padding:15px;
+}
+.card img{
+  width:100%;
+  border-radius:8px;
+}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<header>
+  <strong>💎 Minha Loja</strong>
+  <button type="button" onclick="sair()">Sair</button>
+</header>
+
+<div class="container">
+  <div class="grid" id="produtos"></div>
+</div>
+
+<!-- PIX -->
+<div class="container hidden" id="pixBox">
+  <div class="card" style="max-width:400px;margin:auto">
+    <h2>Pagamento PIX</h2>
+    <p id="pixProduto"></p>
+    <strong id="pixValor"></strong>
+
+    <div id="qrcode" style="margin:20px;text-align:center"></div>
+
+    <div class="card" id="pixCode"></div>
+
+    <button type="button" onclick="copiarPix()">Copiar PIX</button>
+    <button type="button" onclick="fecharPix()">Cancelar</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script>
+// 🔒 PROTEÇÃO
+if(localStorage.getItem("logado")!=="true"){
+  window.location.replace("index.html");
+}
+
+// 🛒 PRODUTOS
+const produtos = [
+  {nome:"Jogo PS4 Digital",preco:49.90,img:"https://via.placeholder.com/300"},
+  {nome:"Conta Premium",preco:29.90,img:"https://via.placeholder.com/300"}
+];
+
+const CHAVE_PIX = "fa093dd0-4758-41be-b664-963eac8e1503";
+
+const grid = document.getElementById("produtos");
+produtos.forEach(p=>{
+  grid.innerHTML += `
+  <div class="card">
+    <img src="${p.img}">
+    <h3>${p.nome}</h3>
+    <p>R$ ${p.preco}</p>
+    <button type="button" onclick="abrirPix('${p.nome}','${p.preco}')">
+      Pagar com PIX
+    </button>
+  </div>`;
+});
+
+function abrirPix(nome,preco){
+  pixProduto.innerText = "Produto: "+nome;
+  pixValor.innerText = "Valor: R$ "+preco;
+  pixCode.innerText = CHAVE_PIX;
+
+  pixBox.classList.remove("hidden");
+  qrcode.innerHTML="";
+  new QRCode(qrcode,{
+    text:CHAVE_PIX,
+    width:200,
+    height:200
+  });
+}
+
+function fecharPix(){
+  pixBox.classList.add("hidden");
+}
+
+function copiarPix(){
+  navigator.clipboard.writeText(CHAVE_PIX);
+  alert("PIX copiado!");
+}
+
+function sair(){
+  localStorage.clear();
+  window.location.replace("index.html");
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>DARKPLAY</title>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+/* 🔥 CONFIG FIREBASE (TROQUE AQUI) */
+const firebaseConfig = {
+  apiKey: "AIzaSyBpqoLaHqJeeuF3-jariNKX7enRtS8pEEE",
+  authDomain: "lojaps-78391.firebaseapp.com",
+  projectId: "lojaps-78391",
+  storageBucket: "lojaps-78391.firebasestorage.app",
+  messagingSenderId: "1023177565842",
+  appId: "1:1023177565842:web:89e413fa229fd9a16c284b"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+</script>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#050b18;
+  color:#fff;
+}
+header{
+  padding:20px;
+  text-align:center;
+  border-bottom:1px solid #00f0ff55;
+}
+h1{color:#00f0ff}
+.container{
+  max-width:1100px;
+  margin:auto;
+  padding:20px;
+}
+.admin{
+  border:1px solid #00f0ff55;
+  padding:15px;
+  border-radius:14px;
+  margin-bottom:25px;
+  box-shadow:0 0 20px #00f0ff33;
+}
+input{
+  width:100%;
+  padding:12px;
+  margin-top:8px;
+  border-radius:10px;
+  border:none;
+  background:#020617;
+  color:#fff;
+}
+button{
+  width:100%;
+  padding:14px;
+  margin-top:10px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(90deg,#00f0ff,#0066ff);
+  font-weight:bold;
+  cursor:pointer;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:20px;
+}
+.card{
+  background:#0b1633;
+  border-radius:16px;
+  padding:15px;
+  box-shadow:0 0 20px #00f0ff22;
+}
+.card img{
+  width:100%;
+  border-radius:12px;
+}
+.remover{
+  background:linear-gradient(90deg,#ff3b3b,#8b0000);
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>DARKPLAY</h1>
+</header>
+
+<div class="container">
+
+<!-- ADMIN -->
+<div id="admin" class="admin" style="display:none">
+  <h2>🧑‍💼 Criar Produto</h2>
+  <input id="nome" placeholder="Nome do produto">
+  <input id="preco" placeholder="Preço">
+  <input id="img" placeholder="URL da imagem">
+  <button onclick="criarProduto()">Adicionar produto</button>
+</div>
+
+<!-- PRODUTOS -->
+<div id="produtos" class="grid">Carregando...</div>
+
+</div>
+
+<script>
+/* ===== ADMIN ===== */
+const ADMIN_EMAIL = "adminDARKZIN@loja.com";
+const email = localStorage.getItem("email") || "";
+const isAdmin = email === ADMIN_EMAIL;
+
+if(isAdmin){
+  document.getElementById("admin").style.display = "block";
+}
+
+/* ===== FIRESTORE ===== */
+const produtosRef = db.collection("produtos");
+
+/* ===== LISTAR (TODOS VEEM) ===== */
+produtosRef.onSnapshot(snapshot=>{
+  const box = document.getElementById("produtos");
+  box.innerHTML = "";
+
+  if(snapshot.empty){
+    box.innerHTML = "Nenhum produto cadastrado";
+    return;
+  }
+
+  snapshot.forEach(doc=>{
+    const p = doc.data();
+
+    box.innerHTML += `
+      <div class="card">
+        <img src="${p.img}" onerror="this.src='https://via.placeholder.com/300'">
+        <h3>${p.nome}</h3>
+        <p>R$ ${p.preco}</p>
+        <button>Pagar com PIX</button>
+        ${isAdmin ? `<button class="remover" onclick="removerProduto('${doc.id}')">Remover</button>` : ``}
+      </div>
+    `;
+  });
+});
+
+/* ===== CRIAR ===== */
+function criarProduto(){
+  if(!isAdmin) return alert("Sem permissão");
+
+  const nome = document.getElementById("nome").value.trim();
+  const preco = document.getElementById("preco").value.trim();
+  const img = document.getElementById("img").value.trim();
+
+  if(!nome || !preco || !img){
+    alert("Preencha tudo");
+    return;
+  }
+
+  produtosRef.add({
+    nome,
+    preco: parseFloat(preco).toFixed(2),
+    img
+  });
+
+  nome.value = preco.value = img.value = "";
+}
+
+/* ===== REMOVER ===== */
+function removerProduto(id){
+  if(!isAdmin) return;
+  if(confirm("Remover produto?")){
+    produtosRef.doc(id).delete();
+  }
+}
+</script>
+
+</body>
+</html>

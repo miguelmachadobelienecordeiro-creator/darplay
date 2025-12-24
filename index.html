@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>DARKPLAY - Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+/* Mantém seu estilo original */
+body{
+  background:#050b18;
+  color:#fff;
+  font-family:Arial;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+}
+.card{
+  background:#0b1633;
+  padding:30px;
+  border-radius:16px;
+  width:100%;
+  max-width:380px;
+  box-shadow:0 0 25px #00f0ff55;
+}
+h2{text-align:center;color:#00f0ff}
+input{
+  width:100%;
+  padding:14px;
+  margin-top:10px;
+  border-radius:10px;
+  border:none;
+  background:#020617;
+  color:#fff;
+}
+button{
+  width:100%;
+  margin-top:15px;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+  background:linear-gradient(90deg,#00f0ff,#0066ff);
+  color:#000;
+}
+.switch{
+  margin-top:15px;
+  text-align:center;
+  cursor:pointer;
+  color:#aaa;
+}
+</style>
+</head>
+
+<body>
+<div class="card">
+  <h2 id="titulo">Fazer Login</h2>
+  <input id="email" placeholder="Email">
+  <input id="senha" type="password" placeholder="Senha">
+  <button type="button" onclick="entrar()">Entrar</button>
+  <div class="switch" onclick="trocar()">Criar conta</div>
+</div>
+
+<script>
+let modoCadastro = false;
+const ADMIN_EMAIL = "adminDARKZIN@loja.com";
+
+function trocar(){
+  modoCadastro = !modoCadastro;
+  document.getElementById("titulo").innerText =
+    modoCadastro ? "Cadastrar" : "Fazer Login";
+}
+
+function entrar(){
+  const email = document.getElementById("email").value.trim();
+  const senha = document.getElementById("senha").value.trim();
+
+  if(!email || !senha){
+    alert("Preencha tudo");
+    return;
+  }
+
+  let users = JSON.parse(localStorage.getItem("users") || "{}");
+
+  if(modoCadastro){
+    if(users[email]){
+      alert("Usuário já existe");
+      return;
+    }
+    users[email] = senha;
+    localStorage.setItem("users", JSON.stringify(users));
+    alert("Conta criada!");
+    modoCadastro = false;
+    trocar();
+    return;
+  }
+
+  if(users[email] !== senha && email !== ADMIN_EMAIL){
+    alert("Login inválido");
+    return;
+  }
+
+  localStorage.setItem("logado","true");
+  localStorage.setItem("email",email);
+  localStorage.setItem("admin", email === ADMIN_EMAIL ? "1" : "0");
+
+  window.location.href = "loja.html"; // redireciona para a loja
+}
+</script>
+</body>
+</html>
